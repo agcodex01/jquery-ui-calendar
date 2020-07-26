@@ -1,30 +1,82 @@
 $(document).ready(function(){
-
+    var dialog , eventsContainer ;
+    var eventContainer = $('td .events');
     var subject     = $('#subject-input');
     var slot        = $('#slot-input');
     var color       = $('#event-color-input');
     var currentSlot = false;
   
 
-    var dialog = $('#dialog').dialog({
-        autoOpen : false,
-    });
+    dialog = $( "#dialog" ).dialog({
+        autoOpen: false,
+        width: 350,
+        modal: true,
+        
+        close : function (){
+            $('#form-error').text('')
+        }
+      });
 
   
-    $('.event').draggable();
-    $('.events').droppable();
-    $( "#draggable" ).draggable({ revert: true });
+   
+    function triggerDragElement(){
+        $('.event').draggable({
+            revert : true,
+            helper : "clone",
+            cursor: "move",
+            
+        });
+    }
+    
+ 
+    
+   
+    $('td').droppable({
+        accept  : '.events > div' ,
+        classes : {
+            "ui-droppable-active": "ui-state-active",
+            "ui-droppable-hover": "ui-state-hover"
+        },
+        drop: function(event,ui){
+            $eventsContainer = $(this).find('.events');
+            checkSlot($eventsContainer,ui.draggable)
+        },
+    });
 
+    
+
+    function checkSlot(e,ui)
+    {
+        var eventslot = false;
+        $(e).children().each(function(){
+            if($(this).find('span:first-child').text() == $(ui).find('span:first-child').text() ){  
+                eventslot =  true;   
+            }                
+        });
+        ui.draggable({
+            revert : eventslot
+        })
+        
+        if(!eventslot){
+            $(ui).fadeOut(function(){
+                var $eventList = $(e).length ? $(e) : $(ui).appendTo( $eventList ).fadeIn();
+             
+                if($(ui).find('span:first-child').text() == 'PM' ){
+                    $(ui).appendTo( $eventList ).fadeIn();
+                }else{
+                    $(ui).prependTo( $eventList ).fadeIn();
+                } 
+            });
+        }  
+    }
 
     function validateForm (c)
     {
-        console.log('validate active')
         $(c).children().each(function(){
             if($(this).find('span').text() == slot.val()){
                 currentSlot = true;         
             }     
         });
-
         if(subject.val() == '')
         {
             $('#form-error').text('Fill up the form!');
@@ -37,84 +89,73 @@ $(document).ready(function(){
         else
         {
             addEvent(c);
+            triggerDragElement();
+            triggerChildClick();
             $('#form-error').text('');
             dialog.dialog('close');  
         }
           
     }
 
+
     function addEvent(c)
     {
-        console.log('addevnt active')
-        if(slot.val() == 'AM'){
-            $(c).prepend('<div class="event ui-draggable ui-draggable-handle" style="background-color:' + color.val() +'; padding:10px; "> <span>'+slot.val()+'</span> : '+ subject.val() +'<span class="ui-icon ui-icon-circle-close"></span></div>');
+        if(slot.val() == 'AM')
+        {
+            $(c).prepend('<div class="event " style="background-color:' + color.val() +';  "> <span>'+slot.val()+' </span>:  '+ subject.val() +'<span class="ui-icon ui-icon-circle-close"></span></div>');
+        
         }else{
-            $(c).append('<div class="event ui-draggable ui-draggable-handle" style="background-color:' + color.val() +' ; padding:10px;"> <span>'+slot.val()+'</span> : '+ subject.val() +'<span class="ui-icon ui-icon-circle-close"></span></div>');
+            $(c).append('<div class="event " style="background-color:' + color.val() +' ; "> <span>'+slot.val()+'</span>: '+ subject.val() +'<span class="ui-icon ui-icon-circle-close"></span> </div>');
         }
        
     }
 
-    function done (c) 
+    function done () 
     {
-        console.log('done active')
-        validateForm(c);    
+        validateForm(eventsContainer);    
     }
 
-    function open(container)
+    function edit(e)
     {
+         
+        subject.val($(e).contents().not($(e).children()).text().replace(':  ',''))
+        slot.val($(e).find('span:first-child').text().trim())
+        color.val($(e).css('background-color')) 
+        $(subject).val()
         dialog.dialog("open");
         dialog.dialog({
-            buttons :{
-                Done : function(){
-                   done(container)
-                },   
+            buttons:{
+                Edit : function(){
+                    console.log($(e).text('new'))
+                    $(e).contents().not($(e).children()).text('new text')
+                    $(this).dialog("close")
+                }
             }
-        }); 
+        })
+        
     }
-
-
-    $('td').click(function()
+  
+    $('td').dblclick(function(){
+        eventsContainer = $(this).find('.events');
+        dialog.dialog({
+            buttons: {
+                Done : done    
+            }
+        })
+        dialog.dialog("open"); 
+        
+    });
+  
+    function triggerChildClick()
     {
-        console.log('parent')
-        
-        let eventsContainer = $(this).find('.events');
+        $('.event span.ui-icon').click(function(e){
+            $(this).parent().remove();
+        });
 
-        open(eventsContainer);
-    });
-
-
-    $('.event').click(function(e){
-
-        e.stopPropagation(); //or return false;
-        console.log('icon click')
-        
-        // $(this).parent().remove();
-        
-    });
-
-   
-    // $('td ').children('div.events div').click(function (ev) {
-    //         console.log('childen');
-    //         $(this).remove()
-    //         ev.stopPropagation(); //or return false;
-    // });
-
-    //     // $('#childContainer2').click(function () {
-
-    //     //     console.log('child container 2');
-
-    //     // }); 
-    $('.parent').click(function(){
-        console.log('parent click');
-    });
-
-    $('.child').click(function(e){
-        // e.stopPropagation()
-        console.log('child click')
-    })
-    $('.an').click(function(e){
-        e.stopPropagation()
-        console.log('an click')
-    })
+        $('.event').click(function(e){
+            
+            edit(this);
+        });
+    }
 
 });

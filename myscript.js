@@ -6,7 +6,7 @@ $(document).ready(function(){
     var color       = $('#event-color-input');
     var currentSlot = false;
   
-
+    
     dialog = $( "#dialog" ).dialog({
         autoOpen: false,
         width: 350,
@@ -14,6 +14,7 @@ $(document).ready(function(){
         close : function (){
             $('#form-error').text('');
             subject.val('');
+            $("#slot-input").prop("disabled",false);
         }
       });
 
@@ -39,7 +40,7 @@ $(document).ready(function(){
  
     function checkDropSlot(e,ui)
     {
-        var eventslot = false;
+        let eventslot = false;
         $(e).children().each(function(){
             if($(this).find('span:first-child').text() == $(ui).find('span:first-child').text() ){  
                 eventslot =  true;   
@@ -61,20 +62,13 @@ $(document).ready(function(){
         }  
     }
     function validateSlot(c){
-        console.log($(c).children().length)
+
         let currentSlot = false;
-        let count = 0;
-        $(c).children().each(function(){
-            console.log($(this).find('span:first-child').text().trim(),slot.val(),count) 
-            ++count
-            if(count == 2){
-                return false;
-            } 
-            
-            return currentSlot = $(this).find('span:first-child').text().trim() == slot.val();
-             
-                  
-        });
+        if($(c).children().length > 0 ){
+            $(c).children().each(function(){     
+                return currentSlot = $(this).find('span:first-child').text().trim() == slot.val();          
+            });
+        }
         return currentSlot;
     }
     function validateForm (c)
@@ -113,23 +107,21 @@ $(document).ready(function(){
 
     function edit(e)
     {   
+        
         subject.val($(e).contents().not($(e).children()).text().replace(/\:\s+/g,''))
         slot.val( $(e).find('span:first-child').text().trim() )
         color.val( rgb2hex( $(e).css('background-color')) )
+        if($(e).parent().children().length == 2 ){
+            $("#slot-input").prop('disabled','disabled');
+        }  
         dialog.dialog({
             title   : "Edit Event",
             buttons :{
                 Edit : function(){ 
                     $(e).css('background-color',color.val());
-                    let currentSlot = validateSlot($(e).parent());
-                    console.log(currentSlot);
-                    if(!currentSlot){
-                        $(e).html(`<span>${slot.val()}</span>: ${subject.val()}<span class="ui-icon ui-icon-circle-close"></span>`);
-                        triggerChildClick();
-                        $(this).dialog("close")
-                    }else{
-                        $('#form-error').text('Slot is taken!');    
-                    }                
+                    $(e).html(`<span>${slot.val()}</span>: ${subject.val()}<span class="ui-icon ui-icon-circle-close"></span>`);
+                    triggerChildClick();
+                    $(this).dialog("close")                    
                 }
             }
         });
@@ -138,27 +130,30 @@ $(document).ready(function(){
     }
     // One click for td
     // $('td').click(function(){
-    //     eventsContainer = $(this).find('.events');
-    //     dialog.dialog({
-    //         title   : "Add Event",
-    //         buttons : {
-    //             Done : done    
-    //         }
-    //     })
-    //     dialog.dialog("open"); 
-        
+    //      eventsContainer = $(this).find('.events');
+    //      if($(eventsContainer).children().length< 2){
+    //          dialog.dialog({
+    //              title       : "Add Event",
+    //              buttons     : {
+    //                  Done    : done    
+    //                  }
+    //          })
+    //          dialog.dialog("open");  
+    //      }    
     // });
 
     // I prefer the double click sir.
     $('td').dblclick(function(){
-        eventsContainer = $(this).find('.events');
-        dialog.dialog({
-            title   : "Add Event",
-            buttons : {
-                Done : done    
-            }
-        })
-        dialog.dialog("open");    
+       eventsContainer = $(this).find('.events');
+       if($(eventsContainer).children().length< 2){
+            dialog.dialog({
+                title   : "Add Event",
+                buttons : {
+                    Done : done    
+                }
+            })
+            dialog.dialog("open");  
+       }  
     });
   
     function triggerChildClick()
@@ -167,14 +162,13 @@ $(document).ready(function(){
             $(this).parent().remove();
         });
 
-        $('.event').click(function(e){
+        $('.event').click(function(){
             
             edit(this);
         });
     }
 
-    var hexDigits = new Array
-        ("0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"); 
+    var hexDigits = new Array("0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"); 
 
     //Function to convert rgb color to hex format
     function rgb2hex(rgb) {
